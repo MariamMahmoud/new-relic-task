@@ -35,11 +35,9 @@ public class MetricConsumer {
 
             // DRY adding values
             if (metricName.equals("cpu")) {
-                var valuesCpu = cpuValues.computeIfAbsent(instant.truncatedTo(ChronoUnit.MINUTES), k -> new LinkedList<>());
-                valuesCpu.add(metricValue);
+                aggregateMinuites(instant, metricValue, cpuValues);
             } else if (metricName.equals("mem")) {
-                var valuesMem = memValues.computeIfAbsent(instant.truncatedTo(ChronoUnit.MINUTES), k -> new LinkedList<>());
-                valuesMem.add(metricValue);
+                aggregateMinuites(instant, metricValue, memValues);
             }
         }
 
@@ -49,6 +47,11 @@ public class MetricConsumer {
         return Map.of(
                 "cpu", new TreeMap<>(cpuAverages),
                 "mem", new TreeMap<>(memAverages));
+    }
+
+    private void aggregateMinuites(Instant instant, int metricValue, Map<Instant, List<Integer>> metricValues) {
+        var valuesCpu = metricValues.computeIfAbsent(instant.truncatedTo(ChronoUnit.MINUTES), k -> new LinkedList<>());
+        valuesCpu.add(metricValue);
     }
 
     private Map<Instant, Double> averageMetric(Map<Instant, List<Integer>> values) {
