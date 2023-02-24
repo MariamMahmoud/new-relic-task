@@ -32,6 +32,7 @@ public class MetricConsumer {
             var instant = Instant.ofEpochSecond(Long.parseLong(matcher.group(1)));
             var metricName = matcher.group(2);
 
+            // DRY adding values
             if (metricName.equals("cpu")) {
                 var cpu = Integer.parseInt(matcher.group(3));
                 var valuesCpu = cpuValues.computeIfAbsent(instant.truncatedTo(ChronoUnit.MINUTES), k -> new LinkedList<>());
@@ -43,28 +44,25 @@ public class MetricConsumer {
             }
         }
 
-        var cpuAverages = cpuValues.entrySet()
-                .stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        e -> e.getValue().stream()
-                                .mapToInt(i -> i)
-                                .average()
-                                .orElse(-1)
-                ));
+        // DRY average calculations
+        var cpuAverages =  averageMetric(cpuValues);
 
-        var memAverages = memValues.entrySet()
-                .stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        e -> e.getValue().stream()
-                                .mapToInt(i -> i)
-                                .average()
-                                .orElse(-1)
-                ));
+        var memAverages = averageMetric(memValues);
 
         return Map.of(
                 "cpu", new TreeMap<>(cpuAverages),
                 "mem", new TreeMap<>(memAverages));
+    }
+
+    private Map<Instant, Double> averageMetric(Map<Instant, List<Integer>> values) {
+        return values.entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue().stream()
+                                .mapToInt(i -> i)
+                                .average()
+                                .orElse(-1)
+                ));
     }
 }
