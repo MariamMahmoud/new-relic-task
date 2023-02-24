@@ -18,7 +18,6 @@ public class MetricConsumer {
 
     private Pattern pattern = Pattern.compile("(\\d+) (\\w+) (\\d+)");
     private Map<String, List<Entry<Instant, Integer>>> input = new TreeMap<>();
-    private Map<String, Map<Instant, List<Integer>>> values = new TreeMap<>();
     private Map<String, Map<Instant, Double>> output = new TreeMap<>();
 
     public Map<String, Map<Instant, Double>> consume(InputStream is) throws IOException {
@@ -47,16 +46,8 @@ public class MetricConsumer {
             var v = entry.getValue();
             Map<Instant, List<Integer>> metricValues = new TreeMap<>();
             var aggregatedMetric = aggregatePerMetric(v, metricValues);
-            values.computeIfAbsent(k, m -> aggregatedMetric);
-        });
-        
-        // TODO: get rid of values without losing sort
-        values
-        .entrySet()
-        .parallelStream()
-        .forEach(entry -> {
-            var k = entry.getKey();
-            output.put(k, new TreeMap<>(averageMetric(values.get(k))));
+            var average = averageMetric(aggregatedMetric);
+            output.put(k, new TreeMap<>(average));
         });
 
         return output;
