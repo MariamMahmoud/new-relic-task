@@ -47,9 +47,9 @@ public class MetricConsumer {
             var k = entry.getKey();
             var v = entry.getValue();
             if (k.equals("cpu")) {
-                v.stream().forEach(val -> aggregateMinuites(val.getKey(), val.getValue(), cpuValues));
+                aggregatePerMetric(v, cpuValues);
             } else if (k.equals("mem")) {
-                v.stream().forEach(val -> aggregateMinuites(val.getKey(), val.getValue(), memValues));
+                aggregatePerMetric(v, memValues);
             }
         });
 
@@ -59,6 +59,10 @@ public class MetricConsumer {
         return Map.of(
                 "cpu", new TreeMap<>(cpuAverages),
                 "mem", new TreeMap<>(memAverages));
+    }
+
+    private void aggregatePerMetric(List<Entry<Instant, Integer>> v, Map<Instant, List<Integer>>metricValues) {
+        v.stream().forEach(val -> aggregateMinuites(val.getKey(), val.getValue(), metricValues));
     }
 
     private void aggregateMinuites(Instant instant, int metricValue, Map<Instant, List<Integer>> metricValues) {
