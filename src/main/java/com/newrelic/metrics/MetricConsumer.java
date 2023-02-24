@@ -37,14 +37,21 @@ public class MetricConsumer {
             Entry<Instant,Integer> inputEntry = Map.entry(instant, metricValue);
             var itemsList = input.computeIfAbsent(metricName, k -> new LinkedList<>());
             itemsList.add(inputEntry);
-            
-            // DRY adding values
-            if (metricName.equals("cpu")) {
-                aggregateMinuites(instant, metricValue, cpuValues);
-            } else if (metricName.equals("mem")) {
-                aggregateMinuites(instant, metricValue, memValues);
-            }
         }
+
+        // calculate outside loop            
+        input
+        .entrySet()
+        .parallelStream()
+        .forEach(entry -> {
+            var k = entry.getKey();
+            var v = entry.getValue();
+            if (k.equals("cpu")) {
+                v.stream().forEach(val -> aggregateMinuites(val.getKey(), val.getValue(), cpuValues));
+            } else if (k.equals("mem")) {
+                v.stream().forEach(val -> aggregateMinuites(val.getKey(), val.getValue(), memValues));
+            }
+        });
 
         var cpuAverages =  averageMetric(cpuValues);
         var memAverages = averageMetric(memValues);
