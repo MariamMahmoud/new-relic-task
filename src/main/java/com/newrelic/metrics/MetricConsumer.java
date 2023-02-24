@@ -50,6 +50,7 @@ public class MetricConsumer {
             values.computeIfAbsent(k, m -> aggregatedMetric);
         });
         
+        // TODO: get rid of values without losing sort
         values
         .entrySet()
         .parallelStream()
