@@ -17,8 +17,6 @@ import java.util.stream.Collectors;
 public class MetricConsumer {
 
     private Pattern pattern = Pattern.compile("(\\d+) (\\w+) (\\d+)");
-    private Map<Instant, List<Integer>> cpuValues = new TreeMap<>();
-    private Map<Instant, List<Integer>> memValues = new TreeMap<>();
     private Map<String, List<Entry<Instant, Integer>>> input = new TreeMap<>();
     private Map<String, Map<Instant, List<Integer>>> values = new TreeMap<>();
     private Map<String, Map<Instant, Double>> output = new TreeMap<>();
@@ -41,7 +39,6 @@ public class MetricConsumer {
             itemsList.add(inputEntry);
         }
 
-        // calculate outside loop            
         input
         .entrySet()
         .parallelStream()
@@ -49,15 +46,8 @@ public class MetricConsumer {
             var k = entry.getKey();
             var v = entry.getValue();
             Map<Instant, List<Integer>> metricValues = new TreeMap<>();
-            // TODO: get rid of the if condition, make it generic
-            if (k.equals("cpu")) {
-                cpuValues = aggregatePerMetric(v, metricValues);
-                values.computeIfAbsent(k, m -> cpuValues);
-
-            } else if (k.equals("mem")) {
-                memValues = aggregatePerMetric(v, metricValues);
-                values.computeIfAbsent(k, m -> memValues);
-            }
+            var aggregatedMetric = aggregatePerMetric(v, metricValues);
+            values.computeIfAbsent(k, m -> aggregatedMetric);
         });
         
         values
