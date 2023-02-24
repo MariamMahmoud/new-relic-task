@@ -26,3 +26,9 @@
 - It worked!!! Sorted and all
 - What's the diff, I need to compare the 3rd commit (the messy one) with the final one
 - Also I need to check for more areas of improvement.
+
+### Learnings
+- Small Commits and test
+- Divide, conquer, test:
+    - Drop stubborn code, conquer less stubborn ones
+    - Break big problems, solve them in rotations, one optimization at a time
