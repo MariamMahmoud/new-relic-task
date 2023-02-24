@@ -10,6 +10,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -18,6 +19,7 @@ public class MetricConsumer {
     private Pattern pattern = Pattern.compile("(\\d+) (\\w+) (\\d+)");
     private Map<Instant, List<Integer>> cpuValues = new TreeMap<>();
     private Map<Instant, List<Integer>> memValues = new TreeMap<>();
+    private Map<String, List<Entry<Instant, Integer>>> input = new TreeMap<>();
 
     public Map<String, Map<Instant, Double>> consume(InputStream is) throws IOException {
 
@@ -32,11 +34,16 @@ public class MetricConsumer {
             var instant = Instant.ofEpochSecond(Long.parseLong(matcher.group(1)));
             var metricName = matcher.group(2);
             var metricValue = Integer.parseInt(matcher.group(3));
+            Entry<Instant,Integer> inputEntry = Map.entry(instant, metricValue);
 
             // DRY adding values
             if (metricName.equals("cpu")) {
+                var itemsList = input.computeIfAbsent(metricName, k -> new LinkedList<>());
+                itemsList.add(inputEntry);
                 aggregateMinuites(instant, metricValue, cpuValues);
             } else if (metricName.equals("mem")) {
+                var itemsList = input.computeIfAbsent(metricName, k -> new LinkedList<>());
+                itemsList.add(inputEntry);
                 aggregateMinuites(instant, metricValue, memValues);
             }
         }
