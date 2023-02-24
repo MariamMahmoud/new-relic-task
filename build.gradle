@@ -1,0 +1,17 @@
+apply plugin: 'java'
+
+apply plugin: 'application'
+
+mainClassName = 'com.newrelic.metrics.Main'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation group: 'junit', name: 'junit', version: '4.13.2'
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '4.4.0'
+}
+
+sourceCompatibility = 1.11
+targetCompatibility = 1.11
