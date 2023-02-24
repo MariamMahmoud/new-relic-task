@@ -6,25 +6,21 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.Map.Entry;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import javax.swing.text.html.parser.Entity;
 
 public class MetricConsumer {
 
     private Pattern pattern = Pattern.compile("(\\d+) (\\w+) (\\d+)");
-    private Map<String, List<Entry<Instant, Integer>>> input = new TreeMap<>();
-    private Map<String, Map<Instant, Double>> output = new TreeMap<>();
+    private Map<Instant, List<Integer>> cpuValues = new TreeMap<>();
+    private Map<Instant, List<Integer>> memValues = new TreeMap<>();
 
     public Map<String, Map<Instant, Double>> consume(InputStream is) throws IOException {
+
         var reader = new BufferedReader(new InputStreamReader(is));
         var line = "";
         while ((line = reader.readLine()) != null) {
@@ -34,41 +30,28 @@ public class MetricConsumer {
             }
 
             var instant = Instant.ofEpochSecond(Long.parseLong(matcher.group(1)));
-            String metricName = matcher.group(2);
-            var value = Integer.parseInt(matcher.group(3));
+            var metricName = matcher.group(2);
 
-            // construct input: { metricName: [{instant0,value0}, {instant1,value1}] }
-            var metricValList = input.computeIfAbsent(metricName, k ->  new LinkedList<>());
-            var instVal = Map.entry(instant, value);
-            metricValList.add(instVal);
+            // DRY adding values
+            if (metricName.equals("cpu")) {
+                var cpu = Integer.parseInt(matcher.group(3));
+                var valuesCpu = cpuValues.computeIfAbsent(instant.truncatedTo(ChronoUnit.MINUTES), k -> new LinkedList<>());
+                valuesCpu.add(cpu);
+            } else if (metricName.equals("mem")) {
+                var mem = Integer.parseInt(matcher.group(3));
+                var valuesMem = memValues.computeIfAbsent(instant.truncatedTo(ChronoUnit.MINUTES), k -> new LinkedList<>());
+                valuesMem.add(mem);
+            }
         }
 
-        input.entrySet()
-        .parallelStream()
-        .forEach(entry -> { // make this parallel for each input i
-            // { i: [{instant0,value0}, {instant1,value1}] }
-            // create values tree for each metricInput
-            Map<Instant, List<Integer>> consumedMetric = consumeOneMetric(entry.getValue());
-            var averagedMetric = averageMetric(consumedMetric);
-            output.put(entry.getKey(), averagedMetric);
-        });
+        // DRY average calculations
+        var cpuAverages =  averageMetric(cpuValues);
 
-        return output;
-    }
+        var memAverages = averageMetric(memValues);
 
-    private Map<Instant, List<Integer>> consumeOneMetric(List<Entry<Instant, Integer>> metric) {
-        Map<Instant, List<Integer>> metricValues = new TreeMap<Instant, List<Integer>>(); 
-
-        metric.stream()
-        .forEach(val -> {
-            var instant = val.getKey(); // instant
-            var value = val.getValue(); // int value
-            // fill up metricValues
-            var values = metricValues.computeIfAbsent(instant.truncatedTo(ChronoUnit.MINUTES), k -> new LinkedList<>());
-            values.add(value);
-        });
-
-        return metricValues;
+        return Map.of(
+                "cpu", new TreeMap<>(cpuAverages),
+                "mem", new TreeMap<>(memAverages));
     }
 
     private Map<Instant, Double> averageMetric(Map<Instant, List<Integer>> values) {
@@ -82,11 +65,4 @@ public class MetricConsumer {
                                 .orElse(-1)
                 ));
     }
-    // new Comparator<Instant>() {
-    //     @Override
-    //     public int compare(Instant a, Instant b)
-    //     {
-    //         return b.compareTo(a);
-    //     }
-    // }
 }
