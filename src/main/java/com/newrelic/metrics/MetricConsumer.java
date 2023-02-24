@@ -46,6 +46,7 @@ public class MetricConsumer {
         .forEach(entry -> {
             var k = entry.getKey();
             var v = entry.getValue();
+            // TODO: get rid of the if condition, make it generic
             if (k.equals("cpu")) {
                 aggregatePerMetric(v, cpuValues);
             } else if (k.equals("mem")) {
@@ -53,6 +54,7 @@ public class MetricConsumer {
             }
         });
 
+        // TODO: make it generic
         var cpuAverages =  averageMetric(cpuValues);
         var memAverages = averageMetric(memValues);
 
