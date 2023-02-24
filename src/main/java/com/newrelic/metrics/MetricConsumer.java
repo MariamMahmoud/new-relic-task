@@ -31,22 +31,19 @@ public class MetricConsumer {
 
             var instant = Instant.ofEpochSecond(Long.parseLong(matcher.group(1)));
             var metricName = matcher.group(2);
+            var metricValue = Integer.parseInt(matcher.group(3));
 
             // DRY adding values
             if (metricName.equals("cpu")) {
-                var cpu = Integer.parseInt(matcher.group(3));
                 var valuesCpu = cpuValues.computeIfAbsent(instant.truncatedTo(ChronoUnit.MINUTES), k -> new LinkedList<>());
-                valuesCpu.add(cpu);
+                valuesCpu.add(metricValue);
             } else if (metricName.equals("mem")) {
-                var mem = Integer.parseInt(matcher.group(3));
                 var valuesMem = memValues.computeIfAbsent(instant.truncatedTo(ChronoUnit.MINUTES), k -> new LinkedList<>());
-                valuesMem.add(mem);
+                valuesMem.add(metricValue);
             }
         }
 
-        // DRY average calculations
         var cpuAverages =  averageMetric(cpuValues);
-
         var memAverages = averageMetric(memValues);
 
         return Map.of(
