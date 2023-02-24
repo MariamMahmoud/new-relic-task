@@ -35,15 +35,13 @@ public class MetricConsumer {
             var metricName = matcher.group(2);
             var metricValue = Integer.parseInt(matcher.group(3));
             Entry<Instant,Integer> inputEntry = Map.entry(instant, metricValue);
-
+            var itemsList = input.computeIfAbsent(metricName, k -> new LinkedList<>());
+            itemsList.add(inputEntry);
+            
             // DRY adding values
             if (metricName.equals("cpu")) {
-                var itemsList = input.computeIfAbsent(metricName, k -> new LinkedList<>());
-                itemsList.add(inputEntry);
                 aggregateMinuites(instant, metricValue, cpuValues);
             } else if (metricName.equals("mem")) {
-                var itemsList = input.computeIfAbsent(metricName, k -> new LinkedList<>());
-                itemsList.add(inputEntry);
                 aggregateMinuites(instant, metricValue, memValues);
             }
         }
