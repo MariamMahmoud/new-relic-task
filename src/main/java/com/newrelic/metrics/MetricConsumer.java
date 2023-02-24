@@ -20,6 +20,8 @@ public class MetricConsumer {
     private Map<Instant, List<Integer>> cpuValues = new TreeMap<>();
     private Map<Instant, List<Integer>> memValues = new TreeMap<>();
     private Map<String, List<Entry<Instant, Integer>>> input = new TreeMap<>();
+    private Map<String, Map<Instant, List<Integer>>> values = new TreeMap<>();
+    private Map<String, Map<Instant, Double>> output = new TreeMap<>();
 
     public Map<String, Map<Instant, Double>> consume(InputStream is) throws IOException {
 
@@ -46,25 +48,32 @@ public class MetricConsumer {
         .forEach(entry -> {
             var k = entry.getKey();
             var v = entry.getValue();
+            Map<Instant, List<Integer>> metricValues = new TreeMap<>();
             // TODO: get rid of the if condition, make it generic
             if (k.equals("cpu")) {
-                aggregatePerMetric(v, cpuValues);
+                cpuValues = aggregatePerMetric(v, metricValues);
+                values.computeIfAbsent(k, m -> cpuValues);
+
             } else if (k.equals("mem")) {
-                aggregatePerMetric(v, memValues);
+                memValues = aggregatePerMetric(v, metricValues);
+                values.computeIfAbsent(k, m -> memValues);
             }
         });
+        
+        values
+        .entrySet()
+        .parallelStream()
+        .forEach(entry -> {
+            var k = entry.getKey();
+            output.put(k, new TreeMap<>(averageMetric(values.get(k))));
+        });
 
-        // TODO: make it generic
-        var cpuAverages =  averageMetric(cpuValues);
-        var memAverages = averageMetric(memValues);
-
-        return Map.of(
-                "cpu", new TreeMap<>(cpuAverages),
-                "mem", new TreeMap<>(memAverages));
+        return output;
     }
 
-    private void aggregatePerMetric(List<Entry<Instant, Integer>> v, Map<Instant, List<Integer>>metricValues) {
+    private Map<Instant, List<Integer>> aggregatePerMetric(List<Entry<Instant, Integer>> v, Map<Instant, List<Integer>>metricValues) {
         v.stream().forEach(val -> aggregateMinuites(val.getKey(), val.getValue(), metricValues));
+        return metricValues;
     }
 
     private void aggregateMinuites(Instant instant, int metricValue, Map<Instant, List<Integer>> metricValues) {
