@@ -1,4 +1,4 @@
-### My thoughts and thought process
+<!-- ### My thoughts and thought process
 
 - It made sense to me that later in the interview we would test on may many metric types and on a bigger file
 - So it made sense that it had to be as generic as possible to adapt to any set of valid inputs
@@ -31,4 +31,4 @@
 - Small Commits and test
 - Divide, conquer, test:
     - Drop stubborn code, conquer less stubborn ones
-    - Break big problems, solve them in rotations, one optimization at a time
+    - Break big problems, solve them in rotations, one optimization at a time -->
